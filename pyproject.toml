@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "cw4-parsing"
+version = "0.1.0"
+description = ""
+authors = ["Nadezhda Lyovushkina <lyovushkina.nv@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
