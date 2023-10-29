@@ -4,22 +4,6 @@ from pprint import pprint
 
 import requests
 
-api_key: str = os.getenv('SJ_API_KEY')
-
-list_of_params_sj = {
-    'keyword': 'python',
-    'town': 'Москва'
-}
-
-list_of_params_hh = {
-    'word': 'python',
-    'town': 'Москва'
-}
-
-headers_for_sj = {
-    'X-Api-App-Id': api_key,
-}
-
 
 class GetAPI(ABC):
 
@@ -32,91 +16,86 @@ class GetAPI(ABC):
         pass
 
     @abstractmethod
-    def build_universal_dict_vacancies(self):
+    def build_universal_list_of_vacancies(self):
         pass
 
 
 class HeadHunterAPI(GetAPI):
 
-    def connect_to_api(self):
-        result = requests.get("https://api.hh.ru/vacancies/?", params=list_of_params_hh)
+    HEADERS = {"User-Agent": "AnyApp/1.0"}
+    URL = "https://api.hh.ru/vacancies"
+
+    def __init__(self, keyword=None):
+        self.params = {"text": keyword}
+
+    def connect_to_api(self) -> object:
+        result = requests.get(self.URL, params=self.params, headers=self.HEADERS)
         result_json = result.json()
         return result_json
 
     def get_vacancies(self):
-        result_json = HeadHunterAPI.connect_to_api(self)
+        result_json = self.connect_to_api()
         list_of_vacancies = result_json['items']
         return list_of_vacancies  # выводит общую инфу, list_for_job - только по нужным полям #list_of_vacancies - общую
 
-    def build_universal_dict_vacancies(self):
-        list_of_vacancies = HeadHunterAPI.get_vacancies(self)
-        num_index = 0
-        list_for_job = []
-        for vacancy in list_of_vacancies:
-            try:
-                list_of_vacancies[num_index]['salary']['from']
-            except TypeError:
-                pre_from = None
-            else:
-                pre_from = list_of_vacancies[num_index]['salary']['from']
-
-            try:
-                list_of_vacancies[num_index]['salary']['to']
-            except TypeError:
-                pre_to = None
-            else:
-                pre_to = list_of_vacancies[num_index]['salary']['from']
-
-            dict_vacancy = {
-                'profession': list_of_vacancies[num_index]['name'],
-                'payment_from': pre_from,
-                'payment_to': pre_to,
-                'town': list_of_vacancies[num_index]['area']['name'],
-                'link': list_of_vacancies[num_index]['alternate_url'],
-                'experience-id': list_of_vacancies[num_index]['experience']['id'],
-                'experience-title': list_of_vacancies[num_index]['experience']['name'],
+    def build_universal_list_of_vacancies(self):
+        list_of_vacancies = self.get_vacancies()
+        universal_list = []
+        for dict_ in list_of_vacancies:
+            universal_dict = {
+                'profession': dict_['name'],
+                'salary': dict_.get('salary'),
+                'town': dict_.get('area'),
+                'url': dict_['alternate_url'],
+                'experience_id': dict_['experience']['id'],
+                'experience_name': dict_['experience']['name'],
             }
-            list_for_job.append(dict_vacancy)
-            num_index += 1
-        return list_for_job
+            universal_list.append(universal_dict)
+        return universal_list
 
 
 class SuperJobAPI(GetAPI):
 
-    def connect_to_api(self):
-        result = requests.get("https://api.superjob.ru/2.0/vacancies/?", params=list_of_params_sj,
-                              headers=headers_for_sj)
+    API_KEY: str = os.getenv('SJ_API_KEY')
+    HEADERS = {'X-Api-App-Id': API_KEY}
+    URL = "https://api.superjob.ru/2.0/vacancies/"
+
+    def __init__(self, keyword=None):
+        self.params = {'keyword': 'python'}
+
+    def connect_to_api(self) -> object:
+        result = requests.get(self.URL, params=self.params,headers=self.HEADERS)
         result_json = result.json()
         return result_json
 
-    def get_vacancies(self):
-        result_json = SuperJobAPI.connect_to_api(self)
+    def get_vacancies(self) -> list:
+        result_json = self.connect_to_api()
         list_of_vacancies = result_json['objects']
         return list_of_vacancies  # выводит общую инфу, list_for_job - только по нужным полям
 
-    def build_universal_dict_vacancies(self):
-        list_of_vacancies = SuperJobAPI.get_vacancies(self)
-        num_index = 0
-        list_for_job = []
-        for vacancy in list_of_vacancies:
-            dict_vacancy = {
-                'profession': list_of_vacancies[num_index]['profession'],
-                'payment_from': list_of_vacancies[num_index]['payment_from'],
-                'payment_to': list_of_vacancies[num_index]['payment_to'],
-                'town': list_of_vacancies[num_index]['town']['title'],
-                'link': list_of_vacancies[num_index]['link'],
-                'experience-id': list_of_vacancies[num_index]['experience']['id'],
-                'experience-title': list_of_vacancies[num_index]['experience']['title'],
+    def build_universal_list_of_vacancies(self):
+        list_of_vacancies = self.get_vacancies()
+        universal_list = []
+        for dict_ in list_of_vacancies:
+            universal_dict = {
+                'profession': dict_['profession'],
+                'salary': {'currency': dict_['currency'],
+                           'from': dict_['payment_from'],
+                           'to': dict_['payment_to'],
+                           },
+                'town': dict_['town']['title'],
+                'url': dict_['link'],
+                'experience_id': dict_['experience']['id'],
+                'experience_name': dict_['experience']['title'],
             }
-            list_for_job.append(dict_vacancy)
-            num_index += 1
-        return list_for_job
+            universal_list.append(universal_dict)
+        return universal_list
 
 
 # ex1 = SuperJobAPI()
 # # pprint(ex1.get_vacancies())
-# pprint(ex1.build_universal_dict_vacancies())
+# pprint(ex1.build_universal_list_of_vacancies())
 
-ex2 = HeadHunterAPI()
-# pprint(ex2.get_vacancies())
-pprint(ex2.build_universal_dict_vacancies())
+# ex2 = HeadHunterAPI()
+# # pprint(ex2.get_vacancies())
+# pprint(ex2.build_universal_list_of_vacancies())
