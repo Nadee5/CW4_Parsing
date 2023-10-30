@@ -21,6 +21,7 @@ class Saver(ABC):
 class JsonSaver(Saver):
 
     def save_vacancies_to_file(self, currency_data, filename):
+        """Сохраняет отфильтрованные вакансии в файл"""
         list_to_save = []
         with open(filename, 'w', encoding='utf-8') as file:
             for dict_ in currency_data:
@@ -28,9 +29,11 @@ class JsonSaver(Saver):
             file.write(json.dumps(list_to_save, ensure_ascii=False, indent=4))
 
     def show_saved_vacancies(self, filename):
+        """Показывает сохранённые вакансии"""
         with open(filename, 'r', encoding='utf-8') as file:
             json_data = json.load(file)
             return json_data
 
     def remove_file(self, filename):
+        """Удаляет файл с вакансиями"""
         os.remove(filename)
