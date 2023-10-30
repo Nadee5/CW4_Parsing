@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 import os
-from pprint import pprint
-
 import requests
 
 
@@ -29,23 +27,26 @@ class HeadHunterAPI(GetAPI):
         self.params = {"text": keyword}
 
     def connect_to_api(self) -> object:
+        """Отправление запроса на сервер"""
         result = requests.get(self.URL, params=self.params, headers=self.HEADERS)
         result_json = result.json()
         return result_json
 
-    def get_vacancies(self):
+    def get_vacancies(self) -> list:
+        """Получение вакансий по ключу"""
         result_json = self.connect_to_api()
         list_of_vacancies = result_json['items']
         return list_of_vacancies  # выводит общую инфу, list_for_job - только по нужным полям #list_of_vacancies - общую
 
-    def build_universal_list_of_vacancies(self):
+    def build_universal_list_of_vacancies(self) -> list:
+        """Создание списка вакансий с универсальными ключами в словаре"""
         list_of_vacancies = self.get_vacancies()
         universal_list = []
         for dict_ in list_of_vacancies:
             universal_dict = {
                 'profession': dict_['name'],
                 'salary': dict_.get('salary'),
-                'town': dict_.get('area'),
+                'town': dict_['area']['name'],
                 'url': dict_['alternate_url'],
                 'experience_id': dict_['experience']['id'],
                 'experience_name': dict_['experience']['name'],
@@ -61,19 +62,22 @@ class SuperJobAPI(GetAPI):
     URL = "https://api.superjob.ru/2.0/vacancies/"
 
     def __init__(self, keyword=None):
-        self.params = {'keyword': 'python'}
+        self.params = {'keyword': keyword}
 
     def connect_to_api(self) -> object:
-        result = requests.get(self.URL, params=self.params,headers=self.HEADERS)
+        """Отправление запроса на сервер"""
+        result = requests.get(self.URL, params=self.params, headers=self.HEADERS)
         result_json = result.json()
         return result_json
 
     def get_vacancies(self) -> list:
+        """Получение вакансий по ключу"""
         result_json = self.connect_to_api()
         list_of_vacancies = result_json['objects']
         return list_of_vacancies  # выводит общую инфу, list_for_job - только по нужным полям
 
-    def build_universal_list_of_vacancies(self):
+    def build_universal_list_of_vacancies(self) -> list:
+        """Создание списка вакансий с универсальными ключами в словаре"""
         list_of_vacancies = self.get_vacancies()
         universal_list = []
         for dict_ in list_of_vacancies:
@@ -90,12 +94,3 @@ class SuperJobAPI(GetAPI):
             }
             universal_list.append(universal_dict)
         return universal_list
-
-
-# ex1 = SuperJobAPI()
-# # pprint(ex1.get_vacancies())
-# pprint(ex1.build_universal_list_of_vacancies())
-
-# ex2 = HeadHunterAPI()
-# # pprint(ex2.get_vacancies())
-# pprint(ex2.build_universal_list_of_vacancies())
